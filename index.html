@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <title>Gestão Contratual SEI</title>
+    <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300..900&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400..600,0..1,0" />
+    <link rel="stylesheet" href="./styles.css?v=20261029-7" />
+  </head>
+  <body>
+    <!-- Barra superior dupla do SEI (faixa do governo + barra do sistema), presente em todas as telas -->
+    <header class="sei-bar">
+      <div class="sei-bar-gov">Governo do Estado de SP</div>
+      <div class="sei-bar-sys">
+        <span class="sei-bar-title">Sistema Eletrônico de Informações</span>
+        <span class="sei-bar-mod">Gestão Contratual</span>
+        <span class="sei-bar-unit" id="seiBarUnit" hidden></span>
+      </div>
+    </header>
+
+    <!-- Login (mesmo padrão de tela dividida do Hub360: marca à esquerda, cartão à direita) -->
+    <section class="login-screen" id="loginScreen" hidden aria-label="Entrar">
+      <div class="login-brand-panel">
+        <div class="login-brand-content">
+          <span class="login-brand-mark"><span class="material-symbols-rounded" aria-hidden="true">contract</span></span>
+          <span class="login-brand-name">Gestão Contratual</span>
+          <span class="login-brand-sub">Plataforma integrada ao SEI</span>
+          <h1>Bem-vindo de volta</h1>
+          <p>Acompanhe contratos, obrigações, fiscalizações e medições em um só lugar.</p>
+        </div>
+      </div>
+
+      <div class="login-form-panel">
+        <div class="login-header-actions">
+          <div class="theme-switcher login-theme-switcher" role="group" aria-label="Aparência">
+            <button type="button" class="theme-option is-active" data-theme="light" aria-pressed="true">
+              <span class="material-symbols-rounded" aria-hidden="true">light_mode</span><span>Claro</span>
+            </button>
+            <button type="button" class="theme-option" data-theme="dark" aria-pressed="false">
+              <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span><span>Escuro</span>
+            </button>
+          </div>
+        </div>
+
+        <form class="login-card" id="loginForm" novalidate>
+          <div class="login-card-heading">
+            <h2>Entrar</h2>
+            <p>Acesse a plataforma de gestão contratual</p>
+          </div>
+          <label class="auth-field">
+            <span>E-mail institucional *</span>
+            <span class="auth-input-wrap">
+              <span class="material-symbols-rounded" aria-hidden="true">mail</span>
+              <input type="email" id="loginEmail" value="usuario.demo@exemplo.gov.br" autocomplete="username" required />
+            </span>
+          </label>
+          <label class="auth-field">
+            <span>Senha *</span>
+            <span class="auth-input-wrap">
+              <span class="material-symbols-rounded" aria-hidden="true">lock</span>
+              <input type="password" id="loginSenha" value="12345678" autocomplete="current-password" required />
+              <button class="auth-ghost-icon" type="button" id="loginShowPass" aria-label="Mostrar senha" aria-pressed="false">
+                <span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+              </button>
+            </span>
+          </label>
+          <a class="auth-link" href="#/login" id="loginForgot">Esqueceu a senha?</a>
+          <button class="login-submit" type="submit">Entrar</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Seleção de perfil (mesmo padrão "Selecione o tipo de acesso" do Hub360) -->
+    <section class="profile-screen" id="profileScreen" hidden aria-label="Seleção de perfil">
+      <main class="profile-main">
+        <div class="profile-heading">
+          <span class="brand">
+            <span class="brand-mark"><span class="material-symbols-rounded" aria-hidden="true">contract</span></span>
+            <span class="brand-text">
+              <span class="brand-name">Gestão Contratual</span>
+              <span class="brand-sub">Plataforma integrada ao SEI</span>
+            </span>
+          </span>
+          <h1>Selecione o perfil</h1>
+          <p>Escolha o ambiente que deseja simular neste protótipo</p>
+        </div>
+        <div class="profile-grid" id="profileGrid"></div>
+        <p class="profile-session">Conectado como <strong id="sessionEmail"></strong> · <button type="button" class="link-btn" id="profileLogout"><span>Sair</span></button></p>
+      </main>
+    </section>
+
+    <div class="app-shell" id="appShell" hidden>
+      <aside class="sidebar" aria-label="Menu principal">
+        <div class="sidebar-top">
+          <button class="icon-btn sidebar-collapse-btn" id="sidebarCollapse" type="button" aria-label="Recolher menu">
+            <span class="material-symbols-rounded" aria-hidden="true">menu</span>
+          </button>
+        </div>
+        <a class="brand sidebar-brand" href="#/perfil" aria-label="Gestão Contratual — trocar perfil">
+          <span class="brand-mark"><span class="material-symbols-rounded" aria-hidden="true">contract</span></span>
+          <span class="brand-text">
+            <span class="brand-name">Gestão Contratual</span>
+            <span class="brand-sub">Integrada ao SEI</span>
+          </span>
+        </a>
+        <nav class="nav" id="sideNav"></nav>
+      </aside>
+      <div class="overlay mobile-scrim" id="mobileScrim"></div>
+
+      <main class="main">
+        <header class="topbar">
+          <button class="icon-btn topbar-mobile-menu" id="mobileMenu" type="button" aria-label="Abrir menu">
+            <span class="material-symbols-rounded" aria-hidden="true">menu</span>
+          </button>
+          <a class="topbar-back" id="topbarBack" href="#" hidden>
+            <span class="material-symbols-rounded" aria-hidden="true">arrow_back</span><span class="topbar-back-label">Voltar</span>
+          </a>
+          <div class="topbar-heading">
+            <h1 class="topbar-title" id="topbarTitle"></h1>
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Caminho"></nav>
+          </div>
+          <div class="topbar-actions">
+            <div class="global-search" id="globalSearch">
+              <label for="globalSearchInput" class="sr-only">Buscar contrato, processo ou documento</label>
+              <div class="search-field">
+                <span class="material-symbols-rounded" aria-hidden="true">search</span>
+                <input id="globalSearchInput" type="search" placeholder="Contrato, processo ou documento" autocomplete="off" />
+              </div>
+              <div class="search-results" id="searchResults" hidden></div>
+            </div>
+            <button class="icon-btn search-toggle" id="searchToggle" type="button" aria-label="Buscar">
+              <span class="material-symbols-rounded" aria-hidden="true">search</span>
+            </button>
+            <div class="theme-switcher" role="group" aria-label="Aparência">
+              <button type="button" class="theme-option is-active" data-theme="light" aria-pressed="true">
+                <span class="material-symbols-rounded" aria-hidden="true">light_mode</span><span>Claro</span>
+              </button>
+              <button type="button" class="theme-option" data-theme="dark" aria-pressed="false">
+                <span class="material-symbols-rounded" aria-hidden="true">dark_mode</span><span>Escuro</span>
+              </button>
+            </div>
+            <div class="dropdown-wrap">
+              <button class="icon-btn" id="notifToggle" type="button" aria-label="Notificações" aria-expanded="false" aria-controls="notifDropdown">
+                <span class="material-symbols-rounded" aria-hidden="true">notifications</span>
+                <span class="dot" id="notifDot" hidden></span>
+              </button>
+              <div class="dropdown" id="notifDropdown" hidden>
+                <div class="dropdown-header"><span>Alertas</span><small>Vinculados a condição e responsável</small></div>
+                <ul class="notif-list" id="notifList"></ul>
+                <div class="notif-foot">Reconhecer um alerta não comprova o cumprimento da obrigação.</div>
+              </div>
+            </div>
+            <div class="dropdown-wrap">
+              <button class="user-pill" id="userToggle" type="button" aria-expanded="false" aria-controls="userDropdown">
+                <span class="user-avatar" id="userAvatar"></span>
+                <span class="user-meta">
+                  <span class="user-name" id="userName"></span>
+                  <span class="user-role-line"><span class="user-role" id="userRole"></span><span class="user-chip" id="userChip"></span></span>
+                </span>
+                <span class="material-symbols-rounded user-caret" aria-hidden="true">expand_more</span>
+              </button>
+              <div class="dropdown user-menu" id="userDropdown" hidden>
+                <div class="user-menu-scope" id="userScope"></div>
+                <button type="button" id="switchProfile"><span class="material-symbols-rounded" aria-hidden="true">swap_horiz</span>Trocar de ambiente</button>
+                <button type="button" id="resetData"><span class="material-symbols-rounded" aria-hidden="true">restart_alt</span>Restaurar dados de exemplo</button>
+                <button type="button" id="logoutBtn" class="danger"><span class="material-symbols-rounded" aria-hidden="true">logout</span>Sair</button>
+              </div>
+            </div>
+          </div>
+        </header>
+        <section class="content" id="content" aria-live="polite"></section>
+      </main>
+    </div>
+
+    <button class="assistant-fab" id="assistantFab" type="button" aria-label="Assistente" aria-expanded="false">
+      <span class="material-symbols-rounded" aria-hidden="true">forum</span>
+    </button>
+    <div class="assistant-panel" id="assistantPanel" hidden role="dialog" aria-label="Assistente">
+      <div class="assistant-head">
+        <div><strong>Assistente</strong><small>Localiza fontes e explica resultados</small></div>
+        <button class="icon-btn" id="assistantClose" type="button" aria-label="Fechar assistente"><span class="material-symbols-rounded" aria-hidden="true">close</span></button>
+      </div>
+      <div class="assistant-body" id="assistantBody"></div>
+      <div class="assistant-foot">O assistente não aprova configurações nem valores. Respostas simuladas neste protótipo.</div>
+    </div>
+
+    <div class="app-toast" id="appToast" role="status" aria-live="polite"><div class="app-toast-content"></div></div>
+
+    <script src="./data.js?v=20261029-7"></script>
+    <script src="./core.js?v=20261029-7"></script>
+    <script src="./shared.js?v=20261029-7"></script>
+    <script src="./super.js?v=20261029-7"></script>
+    <script src="./gestor.js?v=20261029-7"></script>
+    <script src="./operacao.js?v=20261029-7"></script>
+  </body>
+</html>
