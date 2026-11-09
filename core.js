@@ -109,8 +109,12 @@
   }
   function gestorDe(cid) {
     const g = designacoesAtivas(cid).find((d) => d.podeAceite);
-    return g ? userName(g.userId) : "Não designado";
+    if (g) return userName(g.userId);
+    const m = (state.respManual || {})[cid];
+    return m ? m.nome : "Não designado";
   }
+  /* Responsável informado à mão pela GCR quando o contrato não traz gestor/fiscal (reunião de 05/11/2026) */
+  function respManual(cid) { return (state.respManual || {})[cid] || null; }
 
   function currentProfile() { return D.PROFILES[App.profileKey] || null; }
   function currentUser() { const p = currentProfile(); return p ? D.USERS[p.userId] : null; }
@@ -118,10 +122,8 @@
   /* Escopo: perfil diz QUAIS ações; escopo diz EM QUAIS contratos (4.4) */
   function contratosVisiveis(profileKey = App.profileKey) {
     if (profileKey === "super") return D.CONTRATOS.slice();
-    if (profileKey === "gestor") {
-      const ids = new Set(D.DESIGNACOES.filter((d) => d.userId === "rafael" && (!d.fim || d.fim >= D.TODAY)).map((d) => d.contratoId));
-      return D.CONTRATOS.filter((c) => ids.has(c.id));
-    }
+    // Equipe GCR: controla a carteira inteira da DSC (curadoria), não só contratos com designação
+    if (profileKey === "gestor") return D.CONTRATOS.slice();
     if (profileKey === "op") {
       const ids = D.OPERACAO_ESCOPO.camila;
       return D.CONTRATOS.filter((c) => ids.includes(c.id));
@@ -180,6 +182,12 @@
     origem: { indicador: ["Indicador", "query_stats"], inspecao: ["Inspeção", "assignment_turned_in"], dados: ["Problema de dados", "database"] },
     fisc: { rascunho: ["Rascunho", "neutral"], enviada: ["Enviada", "success"] },
     decisao: { confirmada: ["Confirmada", "success"], ajustada: ["Ajustada", "info"], desdobrada: ["Desdobrada", "violet"], relacionada: ["Relacionada", "teal"], nao_aplica: ["Não se aplica", "outline"] },
+    /* Caixa DSC (R06) */
+    acao: { analise: ["Análise", "info"], assinatura: ["Assinatura", "warning"], ciencia: ["Ciência", "neutral"], despacho: ["Despacho", "info"], resposta: ["Resposta", "violet"], devolucao: ["Devolução", "warning"], aprovacao: ["Aprovação", "warning"], arquivamento: ["Arquivamento", "neutral"], nenhuma: ["Nenhuma ação", "outline"] },
+    cx: { nao_localizado: ["Não localizado", "nodata"], recebido: ["Recebido", "info"], sem_classificacao: ["Sem classificação", "pending"], em_analise: ["Em análise", "violet"], aguardando_assinatura: ["Aguardando assinatura", "warning"], aguardando_terceiro: ["Aguardando terceiro", "warning"], concluido: ["Concluído", "success"], encerrado_pendencia: ["Encerrado com pendência", "danger"] },
+    prazoTipo: { legal: ["Prazo legal", "danger"], contratual: ["Prazo contratual", "warning"], interno: ["Prazo interno", "info"] },
+    aditivo: { proposto: ["Proposto", "pending"], formalizado: ["Formalizado", "info"], vigente: ["Vigente", "success"] },
+    reajuste: { previsto: ["Previsto", "neutral"], solicitado: ["Solicitado", "warning"], aplicado: ["Aplicado", "success"] },
   };
 
   /* ---------------- Componentes ---------------- */
@@ -632,7 +640,7 @@
     const p = currentProfile();
     state.historico.unshift({
       id: uid("h"), data: nowIso(), usuario: u ? u.id : "sistema",
-      funcao: e.funcao || (p ? (p.key === "gestor" && e.contratoId ? (minhaDesignacao(e.contratoId) || {}).papel || p.label : p.label) : "—"),
+      funcao: e.funcao || (p ? p.label : "—"),
       acao: e.acao, objeto: e.objeto, detalhe: e.detalhe || "", contratoId: e.contratoId || null,
     });
     save();
@@ -836,6 +844,10 @@
     const prof = path.split("/")[0];
     showShell();
     const content = document.getElementById("content");
+    const oculta = (currentProfile().ocultas || []).find((r) => path === r || path.startsWith(r + "/"));
+    if (oculta) {
+      return renderPage(content, { title: "Fora da primeira versão", crumbs: [], html: `<div class="section">${stateBox("schedule", "Esta tela fica para a próxima fase", "A preparação do acompanhamento e o De acordo dos itens fazem parte do P2. Na primeira versão a Equipe GCR trabalha pela Caixa DSC, pelo Radar e pelas OIS.", `<a class="btn primary" href="#/${currentProfile().home}">Ir para a Caixa DSC</a>`)}</div>` });
+    }
     if (!m) {
       return renderPage(content, { title: "Página não encontrada", crumbs: [], html: `<div class="section">${stateBox("search_off", "Página não encontrada", "O endereço não corresponde a nenhuma tela deste ambiente.", `<a class="btn primary" href="#/${currentProfile().home}">Ir para o início</a>`)}</div>` });
     }
@@ -944,7 +956,7 @@
     document.getElementById("sessionEmail").textContent = lsGet(SESSION_KEY);
     document.title = "Selecione o perfil · Gestão Contratual SEI";
     const grid = document.getElementById("profileGrid");
-    grid.innerHTML = Object.values(D.PROFILES).map((p) => {
+    grid.innerHTML = Object.values(D.PROFILES).filter((p) => !p.hidden).map((p) => {
       const u = D.USERS[p.userId];
       return `<a class="profile-card" href="#/${p.home}" data-profile="${p.key}">
         <span class="profile-avatar ${p.avatarTone}">${u.iniciais}</span>
@@ -975,6 +987,10 @@
   function navCounts() {
     const scopeIds = new Set(contratosVisiveis().map((c) => c.id));
     return {
+      caixaDiretor: App.caixaAguardandoDiretor ? App.caixaAguardandoDiretor().length : 0,
+      caixaTriagem: App.caixaTriagem ? App.caixaTriagem().length : 0,
+      radar: App.radarItens ? App.radarItens().length : 0,
+      oisPend: App.oisPendentes ? App.oisPendentes().length : 0,
       mudancas: state.mudancas.filter((m) => daysUntil(m.data) >= -30).length,
       riscosCriticos: state.riscos.filter((r) => r.severidade === "critica" || r.severidade === "alta").length,
       aguardandoAceite: state.itens.filter((i) => scopeIds.has(i.contratoId) && (i.status === "aguardando_aceite" || i.revisaoPendente)).length,
@@ -1073,12 +1089,13 @@
   /* Assistente discreto: explica fontes, não aprova nada (12.9) */
   const ASSIST = {
     super: [
-      ["O que mudou na carteira este mês?", "Em outubro foram confirmados: o 2º Termo Aditivo do CT 022/2025 (SEI 0145872), que inclui o Posto Oeste e eleva o valor vigente em 9,8%, e a substituição do fiscal técnico do CT 031/2024 (Portaria nº 88/2026). O CT 041/2026 foi identificado no SEI e está em conferência. Veja “Mudanças e aditivos”."],
-      ["Quais contratos vencem em breve?", "O CT 031/2024 (vigilância) vence em 31/12/2026 e não há processo de prorrogação vinculado. Está registrado como risco crítico, sob responsabilidade de Marcos Viana."],
+      ["O que precisa de mim hoje?", "Duas assinaturas: a OIS nº 042/2026 do CT 014/2025 (prazo 30/10) e a minuta do 2º Termo Aditivo do CT 031/2024, que prorroga a vigilância (prazo interno 16/11). A proposta de supressão do CT 033/2025 está sobrestada no Orçamento. Veja a Caixa DSC com o filtro “Precisa do Diretor”."],
+      ["O que está atrasado?", "A resposta à Casa Civil (Ofício nº 318/2026) venceu em 23/10 e está sem responsável. A OIS nº 007/2026 foi emitida para o CT 027/2023, cuja vigência terminou em 31/01/2026. Os dois estão no Radar."],
+      ["Onde os processos estão parados?", "O pedido de troca de preposto do CT 014/2025 está na DSC/GOS sem andamento há 38 dias. O alvará do Posto Vale depende da Prefeitura desde 05/10, com uma cobrança registrada em 19/10."],
     ],
     gestor: [
-      ["Por que o item de Sintonia está pendente?", "Não foi localizada cláusula nos documentos acessíveis do CT 014/2025. A proposta veio do painel de referência. Sem fundamento, a regra não pode ser aprovada: confirme a origem ou indique que não se aplica, com justificativa."],
-      ["O que falta para dar o De acordo na apólice?", "Faltam: abrangência, verificador e evidência exigida, além da antecedência de renovação. A lista de pendências aparece na etapa 3 da preparação."],
+      ["O que falta classificar na caixa?", "O memorando da DAF com o cronograma de pagamentos de novembro chegou hoje e ainda não tem categoria, contrato nem ação. Abra a entrada na Caixa DSC e use “Classificar”."],
+      ["Quais itens estão sem responsável?", "A resposta à Casa Civil, a OIS nº 007/2026 do CT 027/2023 e a minuta do CT 041/2026. O CT 041/2026 também não tem gestor nem fiscal designados: informe o responsável na ficha, aba Responsáveis."],
     ],
     op: [
       ["Como foi calculado o TME do Posto Norte?", "Média ponderada pelo número de atendimentos de cada dia útil de set/2026, com dados do CCO (D-1). Dias sem expediente não contam e dias com dado inconsistente são excluídos com registro. A memória de cálculo está no detalhe do item."],
@@ -1182,7 +1199,7 @@
     esc, icon, pill, lpill, tipoTag, procLink, procVisto, marcarProcVisto, source, docSource, statCard, emptyState, sectionTitle, pageHeader, selectField, searchField, stateBox,
     fmtDate, fmtDateTime, fmtComp, fmtMoney, fmtMoneyShort, fmtNum, daysUntil, compAdd, nowIso, uid, initials, parseDate,
     CURRENT_COMP, NEXT_COMP,
-    userName, getContrato, getPosto, getDoc, getItem, itensDo, docsDo, designacoesAtivas, gestorDe,
+    userName, getContrato, getPosto, getDoc, getItem, itensDo, docsDo, designacoesAtivas, gestorDe, respManual,
     currentProfile, currentUser, contratosVisiveis, podeVerContrato, minhaDesignacao, podeDarAceite,
     situacaoContratual, acompanhamento,
     mountTable, mountPagedList, actionIcon, moreMenu, exportMenu, kpiCard, kpiHead, moneyKpi, fmtMoney0, finContrato, fiscalDe, prazoVigencia, ORIGEM_DADOS, toast, openModal, openDrawer, confirmModal, addHistorico,
@@ -1197,7 +1214,7 @@
     bindShell();
     bindLogin();
     const saved = lsGet(PROFILE_KEY);
-    if (saved && D.PROFILES[saved]) { App.profileKey = saved; buildShell(); }
+    if (saved && D.PROFILES[saved] && !D.PROFILES[saved].hidden) { App.profileKey = saved; buildShell(); }
     const { path } = parseHash();
     // Entrar por um link direto de outro perfil leva primeiro à seleção
     const prof = path.split("/")[0];
