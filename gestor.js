@@ -23,7 +23,7 @@
   }
 
   /* ---------------- Meus contratos ---------------- */
-  A.route("gestor/contratos", "gestor", () => {
+  A.route("gestor/meus-contratos", "gestor", () => { // fluxo de designação (P2), fora do menu
     const cs = A.contratosVisiveis();
     // Visão financeira dos contratos designados (alinhamento de 27/10/2026)
     const fs = cs.map((c) => ({ c, f: A.finContrato(c) }));
@@ -31,7 +31,7 @@
     const menorSaldo = fs.filter((x) => x.f.pct != null).sort((a, b) => b.f.pct - a.f.pct)[0];
     const emAteste = fs.flatMap((x) => x.f.notas.filter((n) => n.situacao === "em_ateste").map((n) => ({ c: x.c, n, vencido: A.compAdd(n.comp, 1) + "-15" < D.TODAY })));
     return {
-      title: "Meus contratos", nav: "gestor/contratos", crumbs: [{ label: "Meus contratos" }],
+      title: "Meus contratos", nav: "gestor/meus-contratos", crumbs: [{ label: "Meus contratos" }],
       html: `<div class="section">
         ${A.pageHeader("Meus contratos", "Contratos em que você possui designação ativa. Situação contratual e preparação do acompanhamento aparecem separadas.", `<a class="btn primary" href="#/gestor/preparar">${icon("playlist_add_check")}Preparar acompanhamento</a>`)}
         ${A.kpiHead("Visão geral dos meus contratos", "Clique para ver a composição")}

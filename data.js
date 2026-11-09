@@ -13,8 +13,9 @@
   const CCO_LAST_PULL = "2026-10-26T06:12:00";
 
   const USERS = {
+    carlos: { id: "carlos", nome: "Carlos", iniciais: "C", funcao: "Diretor de Serviço ao Cidadão (DSC)" },
     helena: { id: "helena", nome: "Helena Duarte", iniciais: "HD", funcao: "Superintendente de Contratos" },
-    rafael: { id: "rafael", nome: "Rafael Moura", iniciais: "RM", funcao: "Gestor de contratos" },
+    rafael: { id: "rafael", nome: "Rafael Moura", iniciais: "RM", funcao: "Analista GCR (controle)" },
     camila: { id: "camila", nome: "Camila Nunes", iniciais: "CN", funcao: "Analista de Operação" },
     marcos: { id: "marcos", nome: "Marcos Viana", iniciais: "MV", funcao: "Gestor de contratos" },
     paula: { id: "paula", nome: "Paula Reis", iniciais: "PR", funcao: "Gestora de contratos" },
@@ -23,44 +24,53 @@
     bruno: { id: "bruno", nome: "Bruno Teles", iniciais: "BT", funcao: "Analista de Operação" },
   };
 
+  /* Perfis da 1ª versão (reuniões de 05/11/2026): o Diretor da DSC acompanha sem etapa de aprovação e a
+     Equipe GCR faz a curadoria da caixa DSC. A chave "super" foi mantida para não quebrar endereços. */
   const PROFILES = {
     super: {
       key: "super",
-      label: "Superintendência",
-      userId: "helena",
+      label: "Diretoria DSC",
+      userId: "carlos",
       avatarTone: "is-navy",
-      descricao: "Acompanha toda a carteira da abrangência autorizada, com acesso de consulta.",
-      escopo: "Carteira completa — Superintendência de Contratos e Atendimento",
-      tags: ["Consulta", "Toda a carteira"],
+      descricao: "Vê tudo o que entra e tramita na caixa DSC, mesmo o que não precisa da sua assinatura, e recebe alertas. Não há etapa de aprovação nova.",
+      escopo: "Caixa DSC e carteira de contratos da Diretoria",
+      tags: ["Consulta e alertas", "Caixa DSC"],
       home: "super/visao-geral",
       nav: [
         { route: "super/visao-geral", icon: "space_dashboard", label: "Visão geral" },
+        { route: "super/caixa", icon: "inbox", label: "Caixa DSC", count: "caixaDiretor" },
+        { route: "super/radar", icon: "radar", label: "Radar", count: "radar" },
         { route: "super/contratos", icon: "description", label: "Contratos" },
+        { route: "super/ois", icon: "assignment", label: "OIS", count: "oisPend" },
         { route: "super/mudancas", icon: "difference", label: "Mudanças", count: "mudancas" },
-        { route: "super/pendencias", icon: "report", label: "Riscos", count: "riscosCriticos" },
         { route: "super/relatorios", icon: "summarize", label: "Relatórios" },
       ],
     },
     gestor: {
       key: "gestor",
-      label: "Gestor/Fiscal",
+      label: "Equipe GCR",
       userId: "rafael",
       avatarTone: "is-teal",
-      descricao: "Prepara e mantém o acompanhamento dos contratos para os quais possui designação.",
-      escopo: "4 contratos designados (3 como gestor, 1 como fiscal)",
-      tags: ["Designações", "Preparação e De acordo"],
-      home: "gestor/contratos",
+      descricao: "Faz a curadoria da caixa DSC: classifica entradas, vincula contratos, registra responsáveis, prazos e cobranças.",
+      escopo: "Caixa DSC e carteira completa da Diretoria",
+      tags: ["Curadoria", "Cobranças"],
+      home: "gestor/caixa",
       nav: [
-        { route: "gestor/contratos", icon: "folder_shared", label: "Meus contratos" },
-        { route: "gestor/preparar", icon: "playlist_add_check", label: "Preparação" },
-        { route: "gestor/itens", icon: "fact_check", label: "Aprovações", count: "aguardandoAceite" },
-        { route: "gestor/documentos", icon: "folder_open", label: "Documentos" },
-        { route: "gestor/pendencias", icon: "pending_actions", label: "Pendências", count: "pendGestor" },
+        { route: "gestor/visao-geral", icon: "space_dashboard", label: "Visão geral" },
+        { route: "gestor/caixa", icon: "inbox", label: "Caixa DSC", count: "caixaTriagem" },
+        { route: "gestor/radar", icon: "radar", label: "Radar", count: "radar" },
+        { route: "gestor/contratos", icon: "description", label: "Contratos" },
+        { route: "gestor/ois", icon: "assignment", label: "OIS", count: "oisPend" },
+        { route: "gestor/mudancas", icon: "difference", label: "Mudanças", count: "mudancas" },
+        { route: "gestor/relatorios", icon: "summarize", label: "Relatórios" },
         { route: "gestor/historico", icon: "history", label: "Histórico" },
       ],
+      // Fluxo de preparação e De acordo (P2): código mantido, fora do menu na 1ª versão
+      ocultas: ["gestor/meus-contratos", "gestor/preparar", "gestor/itens", "gestor/documentos", "gestor/pendencias"],
     },
     op: {
       key: "op",
+      hidden: true, // fiscalização, indicadores e medições ficam para a fase 2
       label: "Operação",
       userId: "camila",
       avatarTone: "is-amber",
@@ -256,7 +266,7 @@
     { id: "d3", contratoId: "c1", sei: "0094391", tipo: "Anexo", titulo: "Anexo II — Acordo de Nível de Serviço (ANS)", data: "2025-02-20", processo: "23180.004512/2024-31", assinatura: "assinado", conferencia: "conferido" },
     { id: "d4", contratoId: "c1", sei: "0127730", tipo: "Termo aditivo", titulo: "1º Termo Aditivo — acréscimo de 5% e inclusão do Posto Leste", data: "2025-07-10", processo: "23180.004512/2024-31", assinatura: "assinado", conferencia: "conferido" },
     { id: "d5", contratoId: "c1", sei: "0141987", tipo: "Ofício", titulo: "Ofício nº 231/2026 — Plano de ação para o Posto Norte", data: "2026-10-03", processo: "23180.010233/2025-55", assinatura: "assinado", conferencia: "pendente" },
-    { id: "d6", contratoId: "c1", sei: "0140112", tipo: "Ordem de serviço", titulo: "OS nº 18/2026 — Reforço de equipe em período de pico", data: "2026-09-15", processo: "23180.010233/2025-55", assinatura: "assinado", conferencia: "conferido" },
+    { id: "d6", contratoId: "c1", sei: "0141801", tipo: "OIS", titulo: "OIS nº 038/2026 — serviços de outubro", data: "2026-09-26", processo: "23180.010233/2025-55", assinatura: "assinado", conferencia: "conferido" },
     { id: "d7", contratoId: "c1", sei: "0143350", tipo: "Nota fiscal", titulo: "NF-e 4.512 — Competência set/2026", data: "2026-10-06", processo: "23180.009914/2025-08", assinatura: "nao_disponivel", conferencia: "pendente", restrito: true },
     { id: "d8", contratoId: "c1", sei: "0142201", tipo: "Relatório", titulo: "Relatório mensal de execução — set/2026", data: "2026-10-03", processo: "23180.010233/2025-55", assinatura: "assinado", conferencia: "conferido" },
     { id: "d9", contratoId: "c2", sei: "0103122", tipo: "Contrato", titulo: "Contrato nº 022/2025", data: "2025-05-08", processo: "23180.002210/2025-14", assinatura: "assinado", conferencia: "conferido" },
@@ -272,10 +282,15 @@
     { id: "d19", contratoId: "c5", sei: "0140944", tipo: "Anexo", titulo: "Anexo I — Termo de Referência", data: "2026-08-25", processo: "23180.007702/2026-47", assinatura: "assinado", conferencia: "pendente" },
     { id: "d20", contratoId: "c5", sei: "0140947", tipo: "Anexo", titulo: "Anexo III — Instrumento de Medição de Resultado (IMR)", data: "2026-08-25", processo: "23180.007702/2026-47", assinatura: "assinado", conferencia: "pendente" },
     { id: "d21", contratoId: "c5", sei: "0141502", tipo: "Portaria", titulo: "Portaria nº 74/2026 — designação de gestor e fiscal", data: "2026-08-29", processo: "23180.007702/2026-47", assinatura: "assinado", conferencia: "conferido" },
-    { id: "d22", contratoId: "c5", sei: "0142630", tipo: "Ordem de serviço", titulo: "OS nº 01/2026 — início dos serviços", data: "2026-09-01", processo: "23180.007702/2026-47", assinatura: "pendente", conferencia: "pendente" },
+    { id: "d22", contratoId: "c5", sei: "0142630", tipo: "OIS", titulo: "OIS nº 001/2026 — início dos serviços", data: "2026-09-01", processo: "23180.007702/2026-47", assinatura: "pendente", conferencia: "pendente" },
     { id: "d23", contratoId: "c4", sei: "0138811", tipo: "Contrato", titulo: "Contrato nº 008/2026", data: "2026-07-22", processo: "23180.006650/2026-02", assinatura: "assinado", conferencia: "conferido" },
     { id: "d24", contratoId: "c6", sei: "0050110", tipo: "Contrato", titulo: "Contrato nº 027/2023", data: "2023-01-25", processo: "23180.001190/2022-73", assinatura: "assinado", conferencia: "conferido" },
     { id: "d25", contratoId: "c7", sei: "0118870", tipo: "Contrato", titulo: "Contrato nº 033/2025", data: "2025-10-20", processo: "23180.008120/2025-36", assinatura: "assinado", conferencia: "conferido" },
+    { id: "d27", contratoId: "c1", sei: "0146032", tipo: "OIS", titulo: "OIS nº 042/2026 — serviços de novembro", data: "2026-10-23", processo: "23180.010233/2025-55", assinatura: "pendente", conferencia: "conferido" },
+    { id: "d28", contratoId: "c2", sei: "0143115", tipo: "OIS", titulo: "OIS nº 019/2026 — limpeza de outubro", data: "2026-09-29", processo: "23180.002210/2025-14", assinatura: "assinado", conferencia: "conferido" },
+    { id: "d29", contratoId: "c5", sei: "0143910", tipo: "OIS", titulo: "OIS nº 002/2026 — manutenção preventiva de outubro", data: "2026-10-01", processo: "23180.007702/2026-47", assinatura: "assinado", conferencia: "conferido" },
+    { id: "d30", contratoId: "c6", sei: "0140230", tipo: "OIS", titulo: "OIS nº 007/2026 — transporte de malotes de setembro", data: "2026-09-02", processo: "23180.001190/2022-73", assinatura: "assinado", conferencia: "pendente" },
+    { id: "d31", contratoId: "c3", sei: "0146120", tipo: "Minuta", titulo: "Minuta do 2º Termo Aditivo — prorrogação por 12 meses", data: "2026-10-24", processo: "23180.000877/2023-90", assinatura: "pendente", conferencia: "pendente" },
     { id: "d26", contratoId: "c8", sei: "0146011", tipo: "Minuta", titulo: "Minuta do Contrato nº 041/2026", data: "2026-10-22", processo: "23180.012004/2026-19", assinatura: "pendente", conferencia: "pendente" },
   ];
 
@@ -396,14 +411,14 @@
       notas.push({ nf: `NF ${String(1000 + n * 7 + c.id.charCodeAt(1)).padStart(5, "0")}`, comp, valor, situacao });
       n++; m++; if (m > 12) { m = 1; y++; }
     }
-    // Uma glosa aplicada no CT 022/2025 (ago/2026) para o histórico financeiro ter esse caso
-    if (c.id === "c2") { const g = notas.find((x) => x.comp === "2026-08"); if (g) { g.glosa = 2150; } }
     return notas;
   }
   CONTRATOS.forEach((c) => {
     c.notas = gerarNotas(c);
     c.valores.executado = c.notas.reduce((s, x) => s + x.valor - (x.glosa || 0), 0);
     c.origemDados = c.qualidade.origem === "Cadastro manual" ? "manual" : c.cadastro === "conferido" ? "sei" : "sei_conferencia";
+    // Contratos executados por OIS mensal (a OIS do mês é o sinal de que o contrato está andando)
+    c.ois = ["c1", "c2", "c3", "c5", "c6"].includes(c.id);
   });
 
   function respostasConformes(n, outras = {}) {
@@ -414,7 +429,142 @@
 
   function seedState() {
     return {
-      version: 4,
+      version: 5,
+      /* ---------- Caixa DSC (R06): entradas lidas da unidade DSC no SEI ----------
+         Cada entrada: o que é, o que precisa ser feito, onde está, prazo, quem responde e evidência.
+         "andamentos" é o histórico de tramitação; o último indica a localização atual. */
+      caixa: [
+        { id: "cx01", sei: "0146120", processo: "23180.000877/2023-90", entrada: "2026-10-24", remetente: "DJU — Jurídico", assunto: "Minuta do 2º Termo Aditivo — prorrogação da vigilância por 12 meses", categoria: "Termo aditivo", contratoId: "c3",
+          acao: "assinatura", precisaDiretor: true, situacao: "aguardando_assinatura", aguardando: "Diretor DSC", responsavel: "marcos",
+          prazo: { data: "2026-11-16", tipo: "interno", regra: "Assinar até 45 dias antes do fim da vigência (31/12/2026)" },
+          andamentos: [
+            { data: "2026-10-08", unidade: "DSC/GCR", texto: "Pedido de prorrogação instruído pelo gestor." },
+            { data: "2026-10-22", unidade: "DJU — Jurídico", texto: "Parecer favorável à prorrogação por 12 meses." },
+            { data: "2026-10-24", unidade: "DSC (Gabinete)", texto: "Minuta encaminhada para assinatura do Diretor." },
+          ] },
+        { id: "cx02", sei: "0143702", processo: "23180.000877/2023-90", entrada: "2026-10-14", remetente: "Gama Segurança Ltda (contratada)", assunto: "Ofício nº 112/2026 — pedido de repactuação de preços", categoria: "Ofício", contratoId: "c3",
+          acao: "analise", precisaDiretor: false, situacao: "em_analise", aguardando: "DJU — Jurídico", responsavel: "marcos",
+          prazo: { data: "2026-12-13", tipo: "contratual", regra: "60 dias para responder ao pedido de repactuação (Cláusula 14)" },
+          andamentos: [
+            { data: "2026-10-14", unidade: "DSC/GCR", texto: "Ofício recebido e juntado ao processo." },
+            { data: "2026-10-16", unidade: "DJU — Jurídico", texto: "Enviado para análise jurídica e de planilha de custos." },
+          ] },
+        { id: "cx03", sei: "0145872", processo: "23180.002210/2025-14", entrada: "2026-10-21", remetente: "DSC/GCR", assunto: "2º Termo Aditivo assinado — inclusão do Posto Oeste (+9,8%)", categoria: "Termo aditivo", contratoId: "c2",
+          acao: "ciencia", precisaDiretor: false, situacao: "concluido", aguardando: null, responsavel: "rafael",
+          prazo: null, evidencia: "Termo assinado (SEI 0145872) e extrato publicado no DOE em 23/10/2026",
+          andamentos: [
+            { data: "2026-10-21", unidade: "DSC (Gabinete)", texto: "Termo assinado pelas partes." },
+            { data: "2026-10-23", unidade: "DSC/GCR", texto: "Extrato publicado; processo devolvido ao gestor." },
+          ] },
+        { id: "cx04", sei: "0146032", processo: "23180.010233/2025-55", entrada: "2026-10-23", remetente: "DSC/GOS", assunto: "OIS nº 042/2026 — serviços de novembro", categoria: "OIS", contratoId: "c1",
+          acao: "assinatura", precisaDiretor: true, situacao: "aguardando_assinatura", aguardando: "Diretor DSC", responsavel: "rafael",
+          prazo: { data: "2026-10-30", tipo: "contratual", regra: "OIS assinada até o último dia útil do mês anterior ao serviço" },
+          andamentos: [
+            { data: "2026-10-20", unidade: "DSC/GOS", texto: "Solicitação da OIS de novembro." },
+            { data: "2026-10-23", unidade: "DSC (Gabinete)", texto: "OIS emitida e enviada para assinatura." },
+          ] },
+        { id: "cx05", sei: "0142955", processo: "23180.007702/2026-47", entrada: "2026-09-29", remetente: "Prefeitura de Vale", assunto: "Exigências para emissão do alvará de funcionamento do Posto Vale", categoria: "Ofício", contratoId: "c5", posto: "p-vale",
+          acao: "resposta", precisaDiretor: false, situacao: "aguardando_terceiro", aguardando: "Prefeitura de Vale", responsavel: "rafael",
+          prazo: null, semPrazoMotivo: "A Prefeitura não informou prazo para emitir o alvará",
+          andamentos: [
+            { data: "2026-09-29", unidade: "DSC/GCR", texto: "Ofício da Prefeitura recebido com 3 exigências." },
+            { data: "2026-10-05", unidade: "Prefeitura de Vale", texto: "Documentos entregues pela GCR; aguardando a Prefeitura." },
+          ] },
+        { id: "cx06", sei: "0140230", processo: "23180.001190/2022-73", entrada: "2026-09-02", remetente: "DSC/GOS", assunto: "OIS nº 007/2026 — transporte de malotes de setembro", categoria: "OIS", contratoId: "c6",
+          acao: "analise", precisaDiretor: false, situacao: "em_analise", aguardando: "DSC/GCR", responsavel: null,
+          prazo: { data: "2026-09-30", tipo: "interno", regra: "Conferir a OIS dentro do mês de competência" },
+          andamentos: [
+            { data: "2026-09-02", unidade: "DSC/GOS", texto: "OIS emitida e assinada." },
+            { data: "2026-09-04", unidade: "DSC/GCR", texto: "Recebida para conferência." },
+          ] },
+        { id: "cx07", sei: "0145990", processo: "23180.013002/2026-11", entrada: "2026-10-16", remetente: "Casa Civil", assunto: "Ofício nº 318/2026 — pedido de informações sobre o tempo de espera nos postos", categoria: "Órgão de controle", contratoId: null,
+          acao: "resposta", precisaDiretor: true, situacao: "em_analise", aguardando: "DSC/GAT", responsavel: null,
+          prazo: { data: "2026-10-23", tipo: "legal", regra: "5 dias úteis a partir do recebimento" },
+          andamentos: [
+            { data: "2026-10-16", unidade: "DSC (Gabinete)", texto: "Ofício recebido." },
+            { data: "2026-10-17", unidade: "DSC/GAT", texto: "Encaminhado para levantar os dados." },
+          ] },
+        { id: "cx08", sei: "0146201", processo: "23180.006650/2026-02", entrada: "2026-10-25", remetente: "DSC/GIS", assunto: "Relatório de chamados de TI de setembro", categoria: "Despacho", contratoId: "c4",
+          acao: "ciencia", precisaDiretor: false, situacao: "recebido", aguardando: "DSC/GCR", responsavel: "paula",
+          prazo: null,
+          andamentos: [{ data: "2026-10-25", unidade: "DSC/GCR", texto: "Despacho recebido para ciência." }] },
+        { id: "cx09", sei: "0146244", processo: "23180.013120/2026-05", entrada: "2026-10-26", remetente: "DAF — Financeiro", assunto: "Memorando — cronograma de pagamentos de novembro", categoria: null, contratoId: null,
+          acao: null, precisaDiretor: false, situacao: "sem_classificacao", aguardando: "DSC/GCR", responsavel: null,
+          prazo: null,
+          andamentos: [{ data: "2026-10-26", unidade: "DSC (Gabinete)", texto: "Documento recebido na caixa da DSC." }] },
+        { id: "cx10", sei: "0146011", processo: "23180.012004/2026-19", entrada: "2026-10-22", remetente: "DSC/GCR", assunto: "Minuta do Contrato nº 041/2026 — mobiliário dos postos", categoria: "Contrato", contratoId: "c8",
+          acao: "assinatura", precisaDiretor: true, situacao: "aguardando_assinatura", aguardando: "Sigma Comércio Ltda (contratada)", responsavel: null,
+          prazo: { data: "2026-11-05", tipo: "interno", regra: "Assinatura antes do início previsto da execução" },
+          andamentos: [
+            { data: "2026-10-22", unidade: "DSC/GCR", texto: "Minuta enviada à contratada para assinatura." },
+          ] },
+        { id: "cx11", sei: "0139412", processo: "23180.008120/2025-36", entrada: "2026-08-28", remetente: "DSC/GAT", assunto: "Proposta de supressão de 10% da central telefônica", categoria: "Termo aditivo", contratoId: "c7",
+          acao: "aprovacao", precisaDiretor: true, situacao: "em_analise", aguardando: "DAF — Orçamento", responsavel: "paula",
+          prazo: null, semPrazoMotivo: "Processo sobrestado formalmente",
+          sobrestado: { desde: "2026-09-10", motivo: "Aguardando confirmação de dotação orçamentária de 2027", ato: "Despacho DAF nº 88/2026 (SEI 0141220)", desbloqueio: "DAF — Orçamento" },
+          andamentos: [
+            { data: "2026-08-28", unidade: "DSC/GAT", texto: "Proposta de supressão elaborada." },
+            { data: "2026-09-10", unidade: "DAF — Orçamento", texto: "Processo sobrestado até a confirmação da dotação de 2027." },
+          ] },
+        { id: "cx12", sei: "0140877", processo: "23180.010233/2025-55", entrada: "2026-09-16", remetente: "Alfa Atendimento Integrado Ltda (contratada)", assunto: "Pedido de substituição do preposto do contrato", categoria: "Ofício", contratoId: "c1",
+          acao: "analise", precisaDiretor: false, situacao: "em_analise", aguardando: "DSC/GOS", responsavel: "rafael",
+          prazo: null, semPrazoMotivo: "Sem prazo no contrato para esta resposta",
+          andamentos: [
+            { data: "2026-09-16", unidade: "DSC/GCR", texto: "Ofício recebido." },
+            { data: "2026-09-18", unidade: "DSC/GOS", texto: "Enviado para avaliação do currículo do novo preposto." },
+          ] },
+        { id: "cx13", sei: "0144401", processo: "23180.011870/2025-61", entrada: "2026-09-28", remetente: "DSC/GCR", assunto: "Notificação à contratada — atraso na reposição de insumos no Posto Leste", categoria: "Notificação", contratoId: "c2", posto: "p-leste",
+          acao: "resposta", precisaDiretor: false, situacao: "encerrado_pendencia", aguardando: "Beta Facilities S.A. (contratada)", responsavel: "rafael",
+          prazo: { data: "2026-10-08", tipo: "contratual", regra: "10 dias para a contratada responder à notificação" },
+          evidencia: "Resposta da contratada (SEI 0144620)", pendencia: "Falta a foto do abastecimento do Posto Leste para comprovar a correção",
+          andamentos: [
+            { data: "2026-09-28", unidade: "Beta Facilities S.A.", texto: "Notificação enviada." },
+            { data: "2026-10-07", unidade: "DSC/GCR", texto: "Resposta recebida; comprovação parcial." },
+          ] },
+        { id: "cx14", sei: "0143910", processo: "23180.007702/2026-47", entrada: "2026-10-01", remetente: "DSC/GOS", assunto: "OIS nº 002/2026 — manutenção preventiva de outubro", categoria: "OIS", contratoId: "c5",
+          acao: "ciencia", precisaDiretor: false, situacao: "concluido", aguardando: null, responsavel: "ana",
+          prazo: null, evidencia: "OIS assinada (SEI 0143910)",
+          andamentos: [{ data: "2026-10-02", unidade: "DSC/GOS", texto: "OIS assinada e enviada à contratada." }] },
+        { id: "cx15", sei: "0145102", processo: "23180.004512/2024-31", entrada: "2026-10-09", remetente: "Alfa Atendimento Integrado Ltda (contratada)", assunto: "Renovação da apólice de seguro de responsabilidade civil", categoria: "Documento da contratada", contratoId: "c1",
+          acao: "analise", precisaDiretor: false, situacao: "concluido", aguardando: null, responsavel: "rafael",
+          prazo: null, evidencia: null,
+          andamentos: [
+            { data: "2026-10-09", unidade: "DSC/GCR", texto: "Apólice recebida." },
+            { data: "2026-10-12", unidade: "DSC/GCR", texto: "Marcado como concluído sem anexar a apólice conferida." },
+          ] },
+      ],
+      /* ---------- OIS (R05): uma OIS, um identificador. Medição e pagamento ficam para a fase 2 ---------- */
+      ois: [
+        { id: "o1", numero: "OIS nº 031/2026", contratoId: "c1", comp: "2026-09", objeto: "Operação dos postos — setembro", sei: "0139020", etapas: { solicitacao: "2026-08-21", emissao: "2026-08-25", assinatura: "2026-08-27", execucao: "2026-09-01", aceite: "2026-10-06" } },
+        { id: "o2", numero: "OIS nº 038/2026", contratoId: "c1", comp: "2026-10", objeto: "Operação dos postos — outubro", sei: "0141801", etapas: { solicitacao: "2026-09-22", emissao: "2026-09-26", assinatura: "2026-09-29", execucao: "2026-10-01", aceite: null } },
+        { id: "o3", numero: "OIS nº 042/2026", contratoId: "c1", comp: "2026-11", objeto: "Operação dos postos — novembro", sei: "0146032", caixaId: "cx04", etapas: { solicitacao: "2026-10-20", emissao: "2026-10-23", assinatura: null, execucao: null, aceite: null }, aguardando: "Diretor DSC" },
+        { id: "o4", numero: "OIS nº 019/2026", contratoId: "c2", comp: "2026-10", objeto: "Limpeza dos postos — outubro", sei: "0143115", etapas: { solicitacao: "2026-09-24", emissao: "2026-09-28", assinatura: "2026-09-29", execucao: "2026-10-01", aceite: null } },
+        { id: "o5", numero: "OIS nº 011/2026", contratoId: "c3", comp: "2026-09", objeto: "Vigilância — setembro", sei: "0139550", etapas: { solicitacao: "2026-08-25", emissao: "2026-08-28", assinatura: "2026-08-29", execucao: "2026-09-01", aceite: "2026-10-03" } },
+        { id: "o6", numero: "OIS nº 001/2026", contratoId: "c5", comp: "2026-09", objeto: "Início dos serviços de manutenção", sei: "0142630", etapas: { solicitacao: "2026-08-28", emissao: "2026-09-01", assinatura: null, execucao: null, aceite: null }, aguardando: "Épsilon Engenharia Ltda (contratada)" },
+        { id: "o7", numero: "OIS nº 002/2026", contratoId: "c5", comp: "2026-10", objeto: "Manutenção preventiva — outubro", sei: "0143910", caixaId: "cx14", etapas: { solicitacao: "2026-09-26", emissao: "2026-10-01", assinatura: "2026-10-02", execucao: "2026-10-05", aceite: null } },
+        { id: "o8", numero: "OIS nº 007/2026", contratoId: "c6", comp: "2026-09", objeto: "Transporte de malotes — setembro", sei: "0140230", caixaId: "cx06", etapas: { solicitacao: "2026-08-30", emissao: "2026-09-02", assinatura: "2026-09-02", execucao: "2026-09-03", aceite: null } },
+      ],
+      /* ---------- Aditivos e reajustes (R02): proposto ≠ formalizado ≠ vigente ---------- */
+      aditivos: [
+        { id: "ad1", contratoId: "c3", titulo: "2º Termo Aditivo — prorrogação por 12 meses", tipo: "Prorrogação", situacao: "proposto", sei: "0146120", caixaId: "cx01", efeito: "Nova vigência até 31/12/2027", data: "2026-10-24" },
+        { id: "ad2", contratoId: "c2", titulo: "2º Termo Aditivo — inclusão do Posto Oeste", tipo: "Acréscimo de valor e abrangência", situacao: "formalizado", sei: "0145872", caixaId: "cx03", efeito: "Vale a partir de 01/11/2026 (+9,8%)", data: "2026-10-21" },
+        { id: "ad3", contratoId: "c7", titulo: "Supressão de 10% da central telefônica", tipo: "Supressão", situacao: "proposto", sei: "0139412", caixaId: "cx11", efeito: "Redução de R$ 840.000,00 no valor total", data: "2026-08-28" },
+        { id: "ad4", contratoId: "c1", titulo: "1º Termo Aditivo — acréscimo de 5% e Posto Leste", tipo: "Acréscimo de valor e abrangência", situacao: "vigente", sei: "0127730", efeito: "Valor total de R$ 13.104.000,00", data: "2025-07-10" },
+      ],
+      reajustes: [
+        { id: "rj1", contratoId: "c3", tipo: "Repactuação", situacao: "solicitado", dataBase: "2026-01-01", indice: "Convenção coletiva 2026", caixaId: "cx02", texto: "Pedido da contratada em análise no Jurídico." },
+        { id: "rj2", contratoId: "c1", tipo: "Reajuste anual", situacao: "previsto", dataBase: "2027-03-01", indice: "IPCA", texto: "A contratada pode pedir o reajuste a partir da data-base." },
+        { id: "rj3", contratoId: "c2", tipo: "Reajuste anual", situacao: "aplicado", dataBase: "2026-05-15", indice: "IPCA", texto: "Aplicado por apostilamento em 06/2026." },
+      ],
+      /* Cobranças registradas pela Equipe GCR, por item (ref = "cx:<id>", "ois:<id>" ou "ct:<id>") */
+      cobrancas: [
+        { id: "cb1", ref: "cx:cx05", data: "2026-10-19T10:20:00", por: "rafael", canal: "E-mail", destinatario: "Prefeitura de Vale", texto: "Pedida a posição do alvará do Posto Vale.", resposta: "Prefeitura informou que o pedido está em análise, sem data." },
+        { id: "cb2", ref: "ois:o6", data: "2026-10-05T15:00:00", por: "ana", canal: "Ofício SEI", destinatario: "Épsilon Engenharia Ltda", texto: "Cobrada a assinatura da OIS nº 001/2026.", resposta: null },
+        { id: "cb3", ref: "cx:cx07", data: "2026-10-22T09:00:00", por: "rafael", canal: "Teams", destinatario: "DSC/GAT", texto: "Lembrete do prazo legal da resposta à Casa Civil (23/10).", resposta: "GAT informou que os dados de setembro ainda não fecharam." },
+      ],
+      /* Responsáveis informados à mão pela GCR quando o contrato não traz gestor ou fiscal */
+      respManual: {},
+      vistosDiretor: ["cx03", "cx14", "cx15", "cx12", "cx13", "cx05", "cx02", "cx11", "cx06"],
       obrigacoes: [
         // CT 014/2025 — preparação parcialmente concluída
         { id: "c1-ob1", contratoId: "c1", descricao: "Manter TME igual ou inferior a 15 minutos por posto", docId: "d3", clausula: "Anexo II, item 2.1 / Cláusula 7.2", tipo: "indicador", abrangencia: "4 postos", periodicidade: "Mensal", prazo: "—", ausentes: [], decisao: { acao: "confirmada", por: "rafael", em: "2026-06-03" } },
@@ -670,13 +820,12 @@
         c1: { step: 3, revisaoRegistrada: true, docsConferidos: ["d1", "d2", "d3", "d4"], iniciadoEm: "2026-06-02" },
       },
       alertas: [
-        { id: "a1", perfil: ["super", "gestor"], contratoId: "c2", titulo: "Documento novo relevante: 2º Termo Aditivo", meta: "CT 022/2025 · inclui Posto Oeste a partir de 01/11", responsavel: "Rafael Moura", estado: "novo", data: "2026-10-21" },
-        { id: "a2", perfil: ["super"], contratoId: "c3", titulo: "Vencimento em 66 dias sem prorrogação identificada", meta: "CT 031/2024 · fim de vigência 31/12/2026", responsavel: "Marcos Viana", estado: "novo", data: "2026-10-26" },
-        { id: "a3", perfil: ["gestor"], contratoId: "c1", titulo: "Item aguardando configuração para aceite", meta: "CT 014/2025 · Apólice de seguro RC vigente", responsavel: "Rafael Moura", estado: "reconhecido", data: "2026-10-18" },
-        { id: "a4", perfil: ["op"], contratoId: "c1", titulo: "Correção vencida: extintor no Posto Centro", meta: "OC-0437 · venceu em 21/10", responsavel: "Camila Nunes", estado: "novo", data: "2026-10-22" },
-        { id: "a5", perfil: ["op"], contratoId: "c1", titulo: "Falta de dado: Posto Sul sem cobertura 20–22/10", meta: "CCO · TME e TMA", responsavel: "Camila Nunes", estado: "em_tratamento", data: "2026-10-23" },
-        { id: "a6", perfil: ["op"], contratoId: "c3", titulo: "Competência pendente: set/2026 sem escala recebida", meta: "CT 031/2024 · fechamento previsto 09/10", responsavel: "Camila Nunes", estado: "novo", data: "2026-10-10" },
-        { id: "a7", perfil: ["gestor"], contratoId: "c5", titulo: "Contrato vigente sem acompanhamento iniciado", meta: "CT 019/2026 · vigência desde 01/09/2026", responsavel: "Rafael Moura", estado: "novo", data: "2026-10-01" },
+        { id: "a1", perfil: ["super", "gestor"], contratoId: "c1", titulo: "OIS de novembro aguarda a sua assinatura", meta: "CT 014/2025 · OIS nº 042/2026 · prazo 30/10", responsavel: "Diretor DSC", estado: "novo", data: "2026-10-23" },
+        { id: "a2", perfil: ["super", "gestor"], contratoId: null, titulo: "Prazo legal vencido: resposta à Casa Civil", meta: "Ofício nº 318/2026 · venceu em 23/10 · sem responsável", responsavel: "DSC/GAT", estado: "novo", data: "2026-10-24" },
+        { id: "a3", perfil: ["super", "gestor"], contratoId: "c6", titulo: "OIS emitida para contrato com vigência encerrada", meta: "CT 027/2023 · OIS nº 007/2026 · vigência terminou em 31/01/2026", responsavel: "Sem responsável", estado: "novo", data: "2026-09-04" },
+        { id: "a4", perfil: ["super", "gestor"], contratoId: "c3", titulo: "Prorrogação aguarda assinatura; vigência termina em 66 dias", meta: "CT 031/2024 · minuta do 2º Termo Aditivo", responsavel: "Marcos Viana", estado: "reconhecido", data: "2026-10-24" },
+        { id: "a5", perfil: ["gestor"], contratoId: null, titulo: "Documento novo sem classificação na caixa DSC", meta: "Memorando DAF — cronograma de pagamentos", responsavel: "Equipe GCR", estado: "novo", data: "2026-10-26" },
+        { id: "a6", perfil: ["op"], contratoId: "c1", titulo: "Correção vencida: extintor no Posto Centro", meta: "OC-0437 · venceu em 21/10", responsavel: "Camila Nunes", estado: "novo", data: "2026-10-22" },
       ],
       historico: [
         { id: "h1", data: "2026-10-26T07:40:00", usuario: "sistema", funcao: "Integração SEI", acao: "Consulta", objeto: "Carteira", detalhe: "Consulta diária aos processos vinculados. 2 documentos novos identificados.", contratoId: null },
@@ -691,7 +840,7 @@
       mudancas: [
         { id: "mu1", data: "2026-10-21", contratoId: "c2", tipo: "aditivo", titulo: "2º Termo Aditivo assinado", origem: { docId: "d12" }, situacao: "confirmada",
           campos: [{ campo: "Valor vigente", antes: "R$ 4.380.000,00", depois: "R$ 4.809.240,00" }, { campo: "Abrangência", antes: "2 postos", depois: "3 postos (Posto Oeste a partir de 01/11/2026)" }],
-          efeito: "Item “Limpeza dos postos” precisa de nova versão antes de 01/11." },
+          efeito: "A OIS de novembro precisa incluir o Posto Oeste." },
         { id: "mu2", data: "2026-10-24", contratoId: "c8", tipo: "cadastro", titulo: "Novo contrato identificado no SEI", origem: { docId: "d26" }, situacao: "pendente_conferencia",
           campos: [{ campo: "Cadastro", antes: "—", depois: "Em conferência" }], efeito: "Sem gestor designado." },
         { id: "mu3", data: "2026-10-14", contratoId: "c3", tipo: "evento", titulo: "Ofício da contratada pedindo repactuação", origem: { docId: "d16" }, situacao: "evento",
@@ -699,20 +848,16 @@
         { id: "mu4", data: "2026-10-10", contratoId: "c3", tipo: "designacao", titulo: "Substituição de fiscal técnico", origem: { docId: "d17" }, situacao: "confirmada",
           campos: [{ campo: "Fiscal técnico", antes: "João Pires", depois: "Rafael Moura" }], efeito: "Acesso de João Pires a este contrato encerrado em 09/10/2026." },
         { id: "mu5", data: "2026-09-01", contratoId: "c5", tipo: "cadastro", titulo: "Início da vigência", origem: { docId: "d18" }, situacao: "confirmada",
-          campos: [{ campo: "Situação contratual", antes: "Vigência futura", depois: "Vigente" }], efeito: "Acompanhamento ainda não iniciado." },
+          campos: [{ campo: "Situação contratual", antes: "Vigência futura", depois: "Vigente" }], efeito: "OIS nº 001/2026 ainda sem assinatura da contratada." },
         { id: "mu6", data: "2026-07-15", contratoId: "c1", tipo: "aditivo", titulo: "1º Termo Aditivo — vigência do Posto Leste", origem: { docId: "d4" }, situacao: "confirmada",
-          campos: [{ campo: "Valor vigente", antes: "R$ 12.480.000,00", depois: "R$ 13.104.000,00" }], efeito: "Itens atualizados com nova abrangência." },
+          campos: [{ campo: "Valor vigente", antes: "R$ 12.480.000,00", depois: "R$ 13.104.000,00" }], efeito: "As OIS passaram a incluir o Posto Leste." },
         { id: "mu7", data: "2026-03-10", contratoId: "c2", tipo: "aditivo", titulo: "1º Termo Aditivo — prorrogação", origem: { docId: "d11" }, situacao: "confirmada",
           campos: [{ campo: "Fim da vigência", antes: "14/05/2026", depois: "14/05/2027" }], efeito: "—" },
       ],
       riscos: [
-        { id: "r1", contratoId: "c3", severidade: "critica", motivo: "Vigência termina em 31/12/2026 e não há processo de prorrogação ou nova contratação vinculado.", responsavel: "Marcos Viana", prazo: "2026-11-15", providencia: "Confirmar estratégia de continuidade e vincular o processo." },
-        { id: "r2", contratoId: "c2", severidade: "alta", motivo: "2º Termo Aditivo amplia a abrangência a partir de 01/11 e o item de limpeza ainda está na versão anterior.", responsavel: "Rafael Moura", prazo: "2026-10-31", providencia: "Revisar e dar o De acordo na versão 2 do item." },
-        { id: "r3", contratoId: "c1", severidade: "alta", motivo: "Correção de extintor vencida desde 21/10 no Posto Centro.", responsavel: "Camila Nunes (verificação)", prazo: "2026-10-28", providencia: "Analisar efeito na medição de out/2026 conforme a regra." },
-        { id: "r4", contratoId: "c8", severidade: "alta", motivo: "Contrato em conferência sem gestor ou fiscal designado.", responsavel: "Cadastro (responsável a definir)", prazo: "2026-11-05", providencia: "Registrar designações com vigência e origem." },
-        { id: "r5", contratoId: "c4", severidade: "media", motivo: "Vigente desde 01/08/2026 sem acompanhamento iniciado.", responsavel: "Paula Reis", prazo: "2026-11-30", providencia: "Iniciar a preparação guiada." },
-        { id: "r6", contratoId: "c3", severidade: "media", motivo: "Medição de set/2026 atrasada: escala realizada não recebida.", responsavel: "Camila Nunes", prazo: "2026-10-30", providencia: "Cobrar escala da contratada ou registrar exceção autorizada." },
-        { id: "r7", contratoId: "c1", severidade: "media", motivo: "Medição de set/2026 do TME está pronta para validação com glosa estimada.", responsavel: "Autoridade de fechamento (a definir)", prazo: "2026-10-31", providencia: "Validar ou registrar a não aplicação com justificativa." },
+        { id: "r1", contratoId: "c3", severidade: "critica", motivo: "Vigência termina em 31/12/2026 e a prorrogação ainda não foi assinada.", responsavel: "Marcos Viana", prazo: "2026-11-16", providencia: "Assinar a minuta do 2º Termo Aditivo (SEI 0146120)." },
+        { id: "r2", contratoId: "c8", severidade: "alta", motivo: "Contrato em conferência sem gestor ou fiscal designado.", responsavel: "Equipe GCR (a definir)", prazo: "2026-11-05", providencia: "Registrar designações com vigência e origem." },
+        { id: "r3", contratoId: "c6", severidade: "alta", motivo: "OIS emitida em 02/09/2026 para contrato com vigência encerrada em 31/01/2026 (sem cobertura contratual).", responsavel: "Sem responsável", prazo: "2026-10-31", providencia: "Suspender a execução e verificar a cobertura contratual com o Jurídico." },
       ],
     };
   }
